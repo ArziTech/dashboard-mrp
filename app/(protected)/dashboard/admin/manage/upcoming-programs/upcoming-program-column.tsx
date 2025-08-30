@@ -3,22 +3,21 @@
 import { ColumnDef } from "@tanstack/table-core";
 import { ProgramExecution } from "@prisma/client";
 import { DataTableColumnHeader } from "@/components/Table/TableHeaderSortable";
-import { DropdownUpcomingProgramStatus } from "@/components/DropdownUpcomingProgramStatus";
+import { DropdownStatus } from "@/upcoming-program/components/dropdown-status";
 import {
   moreActionColumn,
   numberColumn,
   selectColumn,
 } from "@/components/Table/TableData";
-import {
-  deleteManyUpcomingProgramByID,
-  getFirstUpcomingProgram, updateManyUpcomingProgram
-} from "@/actions/programActions";
 import { getFormattedDate } from "@/lib/utils";
 import { DropdownMenuItem } from "@/components/ui/dropdown-menu";
 import { Button } from "@/components/ui/button";
 import { Eye } from "lucide-react";
-import React, { useTransition } from "react";
-import { toast } from "@/hooks/use-toast";
+import {
+  deleteManyUpcomingProgramByID,
+  showUpcomingProgram
+} from "@/upcoming-program/action";
+import Link from "next/link";
 
 export const columns: ColumnDef<ProgramExecution>[] = [
   selectColumn<ProgramExecution>(),
@@ -57,10 +56,10 @@ export const columns: ColumnDef<ProgramExecution>[] = [
       const status = row.original.status;
       const userId = row.original.id;
       return (
-        <DropdownUpcomingProgramStatus
+        <DropdownStatus
           status={status}
-          userId={userId}
-        ></DropdownUpcomingProgramStatus>
+          programId={userId}
+        ></DropdownStatus>
       );
     },
   },
@@ -68,9 +67,6 @@ export const columns: ColumnDef<ProgramExecution>[] = [
   moreActionColumn<ProgramExecution>({
     deleteFNAction: deleteManyUpcomingProgramByID,
     Render: (itemId, row) => {
-      // eslint-disable react-hook/rules-of-hooks
-      // ts-expect-error fine
-      const [, startTransition] = useTransition()
       return (
         <>
           <DropdownMenuItem className={"p-0 px-2"} asChild>
@@ -78,34 +74,23 @@ export const columns: ColumnDef<ProgramExecution>[] = [
               variant="ghost"
               size="sm"
               disabled={row?.original.showOrder !== null}
-              onClick={()=>{
-                startTransition(async ()=>{
-                  const response = await getFirstUpcomingProgram()
-                  if(response.status === "SUCCESS" && response.data) {
-                    const lastItem = response.data.at(-1);
-                    const lastItemOrder:number = lastItem?.showOrder ??  0;
-
-
-                    if(lastItemOrder >= 3) {
-                      toast({
-                        title: "Failed",
-                        variant: "destructive",
-                        description: "Maximum upcoming program"
-                      })
-                      return;
-                    }
-
-                    await updateManyUpcomingProgram([{id: itemId, data: {showOrder: lastItemOrder + 1 } }])
-                    toast({
-                      title: "Success",
-                      description: "Upcoming program has been added"
-                    })
-                  }
-                })
-              }}
+              onClick={async ()=> await showUpcomingProgram(itemId)}
             >
                 Show Program
                 <Eye />
+            </Button>
+          </DropdownMenuItem>
+          <DropdownMenuItem className={"p-0 px-2"} asChild>
+            <Button
+              variant="ghost"
+              size="sm"
+              disabled={row?.original.showOrder !== null}
+              asChild
+            >
+              <Link href={`/dashboard/admin/manage/upcoming-programs/${itemId}/edit`}>
+                Edit Program
+                <Eye />
+              </Link>
             </Button>
           </DropdownMenuItem>
         </>

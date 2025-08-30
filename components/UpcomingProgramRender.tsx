@@ -2,7 +2,6 @@
 import React from "react";
 import { useQuery } from "@tanstack/react-query";
 import { ProgramCard } from "@/components/ProgramCard";
-import { getUpcomingPrograms } from "@/actions/programActions";
 import {
   ErrorMessage,
   ProgramListLoading,
@@ -10,6 +9,7 @@ import {
 } from "@/components/ProgramUtils";
 import { getFormattedDate } from "@/lib/utils";
 import { Program, ProgramExecution } from "@prisma/client";
+import { getUpcomingPrograms } from "@/upcoming-program/action";
 
 interface UpcomingProgramListProps {
   title: string;

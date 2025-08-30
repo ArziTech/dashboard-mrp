@@ -11,11 +11,11 @@ import { Button } from "@/components/ui/button";
 import { ProgramStatus } from "@prisma/client";
 import { cn, mapEnum } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
-import { updateUpcomingProgramStatus } from "@/actions/programActions";
+import { updateUpcomingProgramStatus } from "@/upcoming-program/action";
 
 interface Props {
   status: ProgramStatus;
-  userId: string;
+  programId: string;
 }
 
 export function getStatusBgColor(status: ProgramStatus): string {
@@ -29,7 +29,7 @@ export function getStatusBgColor(status: ProgramStatus): string {
   }
 }
 
-export const DropdownUpcomingProgramStatus = ({ status, userId }: Props) => {
+export const DropdownStatus = ({ status, programId }: Props) => {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -50,7 +50,7 @@ export const DropdownUpcomingProgramStatus = ({ status, userId }: Props) => {
             key={key}
             className={getStatusBgColor(key)}
             onClick={() => {
-              updateUpcomingProgramStatus(userId, key).then((response) => {
+              updateUpcomingProgramStatus(programId, key).then((response) => {
                 if (response.error) {
                   toast({
                     title: "Error",

@@ -87,7 +87,7 @@ export const columns: ColumnDef<Program>[] = [
           <DropdownMenuItem className={"p-0 px-2"} asChild>
             <Button variant="ghost" size="sm" asChild>
               <Link
-                href={{pathname:`/dashboard/admin/manage/upcoming-programs/new`, query: { id: itemId }}}
+                href={`/dashboard/admin/manage/upcoming-programs/${itemId}/new`}
               >
                 Create Upcoming Program
                 <CalendarRange />

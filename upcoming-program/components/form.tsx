@@ -2,10 +2,9 @@
 import React, { useTransition } from "react";
 import { useForm } from "react-hook-form";
 import z from "zod";
-import { upcomingProgramSchema } from "@/schemas/ProgramSchemas";
+import { upcomingProgramSchema } from "@/upcoming-program/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { notFound, useRouter, useSearchParams } from "next/navigation";
-import { createNewUpcomingProgram } from "@/actions/programActions";
 import {
   Form,
   FormControl,
@@ -29,27 +28,39 @@ import {
 } from "@/components/ui/popover";
 import { Button, buttonVariants } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
-import { CalendarIcon, LoaderCircle } from "lucide-react";
+import { CalendarIcon, LoaderCircle, Trash } from "lucide-react";
 import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/hooks/use-toast";
+import {
+  createNewUpcomingProgram,
+  updateUpcomingProgramById
+} from "@/upcoming-program/action";
+import { ProgramExecution } from "@prisma/client";
+import { ActionResponse } from "@/types";
 
-const NewUpcomingProgramForm = () => {
+interface Props {
+  type: 'NEW' | 'EDIT';
+  upcomingProgram: ProgramExecution
+}
+
+const UpcomingProgramForm = ({type, upcomingProgram}:Props) => {
+  const {id, title, status, date:programDate} = upcomingProgram;
   const router = useRouter();
-  const searchParams = useSearchParams();
-  const programId = searchParams.get("id");
-  const [date, setDate] = React.useState<Date>();
+
+  const [date, setDate] = React.useState<Date | undefined>(programDate === null ? undefined: programDate);
 
   const [isPending, startTransition] = useTransition();
   const form = useForm<z.infer<typeof upcomingProgramSchema>>({
     resolver: zodResolver(upcomingProgramSchema),
     defaultValues: {
-      title: "",
-      status: "UPCOMING"
+      title: title || "",
+      status: status || "UPCOMING",
+      date: date
     }
   });
 
-  if (!programId)
+  if (!id)
     return notFound();
 
   async function onSubmit(values: z.infer<typeof upcomingProgramSchema>) {
@@ -58,25 +69,34 @@ const NewUpcomingProgramForm = () => {
       return;
     }
 
-    if (!programId)
-      return;
-
     startTransition(async () => {
+      const {date:dateInput, status:statusInput, title:titleInput} = validatedFields.data
+      let response: ActionResponse<ProgramExecution>|undefined;
 
-      const response = await createNewUpcomingProgram({
-          ...values,
-          status: values.status as "DONE" | "UPCOMING" | "CANCELED",
-          showOrder: null
-        },
-        programId
-      );
-      if (response.error) {
+      if(type === 'NEW') {
+        response = await createNewUpcomingProgram({
+            ...values,
+            status: values.status as "DONE" | "UPCOMING" | "CANCELED",
+            showOrder: null
+          },
+          id
+        );
+      } else if(type === 'EDIT') {
+        response = await updateUpcomingProgramById(id, {
+          ...upcomingProgram,
+          date:dateInput,
+          status: statusInput as "DONE" | "UPCOMING" | "CANCELED",
+          title: titleInput
+        });
+      }
+
+      if (response?.error) {
         toast({
           title: "Error",
           description: response.error,
           variant: "destructive"
         });
-      } else if (response.success) {
+      } else if (response?.success) {
         toast({
           title: "Success",
           description: response.success
@@ -117,32 +137,44 @@ const NewUpcomingProgramForm = () => {
             render={({ field }) => (
               <FormItem className="flex flex-col justify-between  w-1/2 ">
                 <FormLabel>Date</FormLabel>
-                <Popover>
-                  <PopoverTrigger asChild>
-                    <Button
-                      variant={"outline"}
-                      className={cn(
-                        "justify-start text-left font-normal",
-                        !date && "text-muted-foreground"
-                      )}
-                    >
-                      <CalendarIcon className="mr-2 h-4 w-4" />
-                      {date ? format(date, "PPP") : <span>Pick a date</span>}
-                    </Button>
-                  </PopoverTrigger>
-                  <PopoverContent className="w-auto p-0">
-                    <Calendar
-                      mode="single"
-                      {...field}
-                      selected={date}
-                      onSelect={(date) => {
-                        setDate(date);
-                        field.onChange(date);
-                      }}
-                      initialFocus
-                    />
-                  </PopoverContent>
-                </Popover>
+                <div className={'flex gap-2'}>
+                  <Popover >
+                    <PopoverTrigger asChild>
+                      <Button
+                        variant={"outline"}
+                        className={cn(
+                          "w-full justify-start text-left font-normal",
+                          !date && "text-muted-foreground"
+                        )}
+                      >
+                        <CalendarIcon className="mr-2 h-4 w-4" />
+                        {date ? format(date, "PPP") : <span>Pick a date</span>}
+                      </Button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-auto p-0">
+                      <Calendar
+                        mode="single"
+                        {...field}
+                        selected={date}
+                        onSelect={(date) => {
+                          setDate(date);
+                          field.onChange(date);
+                        }}
+                        initialFocus
+                      />
+                    </PopoverContent>
+                  </Popover>
+                  <Button
+                    variant={'destructive'}
+                    onClick={(e) => {
+                      e.preventDefault()
+                      setDate(undefined)
+                      field.onChange(undefined)
+                    }}
+                  >
+                    <Trash />
+                  </Button>
+                </div>
                 <FormMessage></FormMessage>
               </FormItem>
             )}
@@ -191,4 +223,4 @@ const NewUpcomingProgramForm = () => {
     </Form>
   );
 };
-export default NewUpcomingProgramForm;
+export default UpcomingProgramForm;

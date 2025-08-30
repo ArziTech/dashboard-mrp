@@ -1,13 +1,13 @@
 import React from "react";
 import { DataTable } from "@/components/Table/TableData";
 import { columns } from "@/app/(protected)/dashboard/admin/manage/upcoming-programs/upcoming-program-column";
-import {
-  deleteManyUpcomingProgramByID,
-  getAllUpcomingProgram
-} from "@/actions/programActions";
 import { Card, CardContent, CardHeader } from "@/components/ui/card";
 import ShownProgram
   from "@/app/(protected)/dashboard/admin/manage/upcoming-programs/_components/shown-program";
+import {
+  deleteManyUpcomingProgramByID,
+  getAllUpcomingProgram
+} from "@/upcoming-program/action";
 
 const Page = async () => {
   return (

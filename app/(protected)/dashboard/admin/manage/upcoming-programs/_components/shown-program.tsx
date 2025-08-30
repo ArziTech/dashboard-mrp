@@ -1,15 +1,15 @@
 "use client";
 import React, { useState, useTransition } from "react";
 import { useQuery } from "@tanstack/react-query";
-import {
-  getFirstUpcomingProgram,
-  updateManyUpcomingProgram
-} from "@/actions/programActions";
 import { GripVertical, LoaderCircle, X } from "lucide-react";
 import { Prisma, ProgramExecution } from "@prisma/client";
 import { Reorder } from "framer-motion";
 import { Button } from "@/components/ui/button";
 import ProgramExecutionUpdateInput = Prisma.ProgramExecutionUpdateInput;
+import {
+  getFirstUpcomingProgram,
+  updateManyUpcomingProgram
+} from "@/upcoming-program/action";
 
 const ShownProgram = () => {
   const [upcomingProgram, setUpcomingProgram] = useState<ProgramExecution[] | undefined>();
