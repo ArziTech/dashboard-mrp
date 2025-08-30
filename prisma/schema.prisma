@@ -1,20 +1,10 @@
-datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
-}
-
 generator client {
   provider = "prisma-client-js"
 }
 
-enum UserRole {
-  ADMIN
-  DC
-  PTQ
-  UMAR
-  IMC
-  TAKMIR
-  JAMAAH
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
 }
 
 model User {
@@ -27,31 +17,30 @@ model User {
   image         String?
   bio           String?
   gender        String?
-  accounts      Account[]
   role          UserRole  @default(JAMAAH)
   createdAt     DateTime  @default(now())
   updatedAt     DateTime  @updatedAt
+  accounts      Account?
   article       Article[]
 }
 
 model Account {
-  id                       String  @id @default(cuid())
-  userId                   String  @unique
+  id                       String   @id @default(cuid())
+  userId                   String   @unique
   type                     String
   provider                 String
   providerAccountId        String
-  refresh_token            String? @db.Text
-  access_token             String? @db.Text
+  refresh_token            String?
+  access_token             String?
   expires_at               Int?
   token_type               String?
   scope                    String?
-  id_token                 String? @db.Text
+  id_token                 String?
   session_state            String?
   refresh_token_expires_in Int?
-  user                     User?   @relation(fields: [userId], references: [id])
-
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  createdAt                DateTime @default(now())
+  updatedAt                DateTime @updatedAt
+  user                     User     @relation(fields: [userId], references: [id])
 
   @@unique([provider, providerAccountId])
   @@index([userId])
@@ -81,37 +70,65 @@ model resetPasswordRequest {
   email String
 }
 
-enum ProgramType {
-  DAILY
-  ANNUALY
-}
-
 model Program {
-  id               String             @id // title-year-identifier
+  id               String             @id
   title            String
-  description      String             @db.Text
-  content          String             @db.Text
+  description      String
+  content          String
   image            String
   type             ProgramType
   customeUrl       String?
+  showMoreLink     Boolean            @default(false)
   programExecution ProgramExecution[]
+}
+
+model ProgramExecution {
+  id           String        @id @default(cuid())
+  title        String
+  image        String?
+  date         DateTime?
+  showOrder    Int?
+  status       ProgramStatus
+  programId    String
+  showMoreLink Boolean       @default(false)
+  program      Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
+}
+
+model Article {
+  id       String          @id @default(cuid())
+  title    String
+  slug     String          @unique
+  category ArticleCategory @default(NOT_SET)
+  content  String
+  coverUrl String?
+  views    Int             @default(0)
+  status   ArticleStatus   @default(DRAFT)
+  authorId String
+  backupId String?
+  author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  backup   Article?        @relation("BackupRelation", fields: [backupId], references: [id])
+  original Article[]       @relation("BackupRelation")
+}
+
+enum UserRole {
+  ADMIN
+  DC
+  PTQ
+  UMAR
+  IMC
+  TAKMIR
+  JAMAAH
+}
+
+enum ProgramType {
+  DAILY
+  ANNUALY
 }
 
 enum ProgramStatus {
   UPCOMING
   DONE
   CANCELED
-}
-
-model ProgramExecution {
-  id        String        @id @default(cuid())
-  title     String
-  image     String?
-  date      DateTime?
-  showOrder Int?
-  status    ProgramStatus
-  program   Program       @relation(fields: [programId], references: [id], onDelete: Cascade)
-  programId String
 }
 
 enum ArticleStatus {
@@ -125,22 +142,4 @@ enum ArticleCategory {
   PENDIDIKAN
   AKIDAH
   FIQIH
-}
-
-model Article {
-  id       String          @id @default(cuid())
-  title    String
-  slug     String          @unique
-  category ArticleCategory @default(NOT_SET)
-  content  String          @db.Text
-  coverUrl String?
-  views    Int             @default(0)
-  status   ArticleStatus   @default(DRAFT)
-  author   User            @relation(fields: [authorId], references: [id], onDelete: Cascade)
-  authorId String
-
-  // Self-relation fields
-  backupId String? // Field to store the ID of the backup article
-  backup   Article?  @relation("BackupRelation", fields: [backupId], references: [id])
-  original Article[] @relation("BackupRelation") // Field for the original article referencing backups
 }
