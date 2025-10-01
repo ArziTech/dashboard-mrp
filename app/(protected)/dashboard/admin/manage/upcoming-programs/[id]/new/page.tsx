@@ -39,7 +39,7 @@ const Page = async (
           <h2 className={"text-xl  font-medium"}>New Upcoming Program</h2>
         </CardHeader>
         <CardContent>
-          <UpcomingProgramForm type={'NEW'} upcomingProgram={createResponse.data}  />
+          <UpcomingProgramForm upcomingProgram={createResponse.data}  />
         </CardContent>
       </Card>
     </div>

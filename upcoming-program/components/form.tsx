@@ -4,7 +4,7 @@ import { useForm } from "react-hook-form";
 import z from "zod";
 import { upcomingProgramSchema } from "@/upcoming-program/schema";
 import { zodResolver } from "@hookform/resolvers/zod";
-import { notFound, useRouter, useSearchParams } from "next/navigation";
+import { notFound, useRouter } from "next/navigation";
 import {
   Form,
   FormControl,
@@ -33,18 +33,15 @@ import { format } from "date-fns";
 import { Calendar } from "@/components/ui/calendar";
 import { toast } from "@/hooks/use-toast";
 import {
-  createNewUpcomingProgram,
   updateUpcomingProgramById
 } from "@/upcoming-program/action";
 import { ProgramExecution } from "@prisma/client";
-import { ActionResponse } from "@/types";
 
 interface Props {
-  type: 'NEW' | 'EDIT';
   upcomingProgram: ProgramExecution
 }
 
-const UpcomingProgramForm = ({type, upcomingProgram}:Props) => {
+const UpcomingProgramForm = ({ upcomingProgram}:Props) => {
   const {id, title, status, date:programDate} = upcomingProgram;
   const router = useRouter();
 
@@ -71,24 +68,13 @@ const UpcomingProgramForm = ({type, upcomingProgram}:Props) => {
 
     startTransition(async () => {
       const {date:dateInput, status:statusInput, title:titleInput} = validatedFields.data
-      let response: ActionResponse<ProgramExecution>|undefined;
 
-      if(type === 'NEW') {
-        response = await createNewUpcomingProgram({
-            ...values,
-            status: values.status as "DONE" | "UPCOMING" | "CANCELED",
-            showOrder: null
-          },
-          id
-        );
-      } else if(type === 'EDIT') {
-        response = await updateUpcomingProgramById(id, {
-          ...upcomingProgram,
-          date:dateInput,
-          status: statusInput as "DONE" | "UPCOMING" | "CANCELED",
-          title: titleInput
-        });
-      }
+      const response = await updateUpcomingProgramById(id, {
+        ...upcomingProgram,
+        date:dateInput,
+        status: statusInput as "DONE" | "UPCOMING" | "CANCELED",
+        title: titleInput
+      });
 
       if (response?.error) {
         toast({
